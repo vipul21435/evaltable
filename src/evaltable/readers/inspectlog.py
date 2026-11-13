@@ -19,7 +19,8 @@ in ``eval.config.epochs``.
 Ignored: messages, events, model output, the store, usage, the ``answer`` and ``explanation``
 of each score, and ``results`` / ``reductions`` (they are recomputed from the samples).
 Recent Inspect versions compress ``.eval`` archives with zstd, which Python's ``zipfile``
-reads only from 3.14; for those, convert first with ``inspect log convert --to json``.
+reads only from 3.14; for those, convert first with
+``inspect log convert LOG_OR_DIR --to json --output-dir OUT_DIR``.
 """
 
 from __future__ import annotations
@@ -78,7 +79,8 @@ def _load(path: Path) -> tuple[dict[str, Any], list[dict[str, Any]]]:
                 ]
         except NotImplementedError as exc:
             raise ValueError(
-                f"{path}: {exc}; convert it with 'inspect log convert --to json' first"
+                f"{path}: {exc}; convert it first with "
+                f"'inspect log convert {path} --to json --output-dir OUT_DIR'"
             ) from None
         except zipfile.BadZipFile:
             raise ValueError(f"{path}: not a zip archive, so not an Inspect .eval log") from None

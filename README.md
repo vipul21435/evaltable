@@ -219,7 +219,7 @@ not comparable
 - Newer SWE-bench `results.json` files list only `resolved`, `no_generation` and `no_logs`; reading one needs
   the split's instance ids (`--items`).
 - Recent Inspect `.eval` archives use zstd compression, which Python's `zipfile` reads only from 3.14. Convert
-  them with `inspect log convert --to json` first.
+  them first with `inspect log convert LOG_OR_DIR --to json --output-dir OUT_DIR`.
 - Intervals treat the per-item mean as one Bernoulli outcome; there is no correction for several samples per
   item or for clustering. For paired comparisons and error bars use evalstats.
 - Files are read whole into memory; `--map`, `--metric` and `--filter` apply to every file in one command;
