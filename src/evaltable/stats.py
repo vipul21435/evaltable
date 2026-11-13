@@ -9,7 +9,7 @@ from statistics import NormalDist
 def wilson_interval(
     successes: float, n: float, confidence: float = 0.95
 ) -> tuple[float, float] | None:
-    """Wilson score interval for a binomial proportion.
+    """Wilson score interval for a binomial proportion (Wilson, 1927, JASA 22(158):209-212).
 
     ``successes`` may be fractional (a sum of scores in [0, 1]); the interval is then the
     same formula applied to the mean, which is an approximation. Returns ``None`` for ``n == 0``.

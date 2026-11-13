@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "evaltable"
-version = "0.1.0.dev0"
+version = "0.1.0"
 description = "Read evaluation harness result files into one per-item table and check runs for differences that make their scores incomparable."
 readme = "README.md"
 license = "MIT"
