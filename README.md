@@ -225,8 +225,11 @@ not comparable
 
 ## Related tools
 
-- [evalstats](https://github.com/vipul21435/evalstats): error bars and paired comparisons for evaluations;
-  it takes a per-item table like this one.
+- [evalstats](https://github.com/vipul21435/evalstats): error bars and paired comparisons for evaluations.
+  Its input columns are `item`, `model` and `score`, and it reports a score that is not a finite number as an
+  error. To hand it this table, rename `item_id` to `item` and `run_id` to `model`, and first either drop the
+  rows whose status is not `ok` (errors left out) or give them score 0 (errors as failures); evaltable writes
+  an empty score on those rows.
 - [irtbench](https://github.com/vipul21435/irtbench) and [evalstop](https://github.com/vipul21435/evalstop)
   also consume this table.
 - [testlogs](https://github.com/vipul21435/testlogs) parses test-runner output, one level below these result
