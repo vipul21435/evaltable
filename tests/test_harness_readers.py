@@ -222,7 +222,7 @@ def check_inspect_table(table):
         ("2", 0): (Status.OK, 0.5),
         ("2", 1): (Status.ERROR, None),
         ("3", 0): (Status.TIMEOUT, None),
-        ("3", 1): (Status.ERROR, None),
+        ("3", 1): (Status.MISSING, None),
         ("4", 0): (Status.MISSING, None),
         ("4", 1): (Status.MISSING, None),
     }

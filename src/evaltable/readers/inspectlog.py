@@ -11,7 +11,8 @@ the ``value`` of the chosen scorer (default: the first in ``scores``), converted
 Inspect's ``value_to_float`` does it: ``C`` 1, ``P`` 0.5, ``I`` and ``N`` 0, numbers as they
 are, ``yes``/``true`` 1, ``no``/``false`` 0, numeric strings parsed, anything else 0. A sample
 with an ``error`` is ``error``; a sample with no score that hit a ``time`` or ``working`` limit
-is ``timeout``; any other unscored sample is ``error``. Ids listed in
+is ``timeout``; any other unscored sample (for example in a log written before scoring) is
+``missing``. Ids listed in
 ``eval.dataset.sample_ids`` with no sample in the log become ``missing`` rows, one per epoch
 in ``eval.config.epochs``.
 
@@ -127,8 +128,8 @@ def read_inspect(
         elif limit.get("type") in ("time", "working"):
             status, score = Status.TIMEOUT, None
         else:
-            meta["error"] = "no score"
-            status, score = Status.ERROR, None
+            meta["reason"] = "no score"
+            status, score = Status.MISSING, None
         rows.append(Row(item, run, score, status, epoch - 1, meta))
     if scorer is not None and samples and scorer not in scorers_found:
         raise ValueError(f"{path}: no sample has a score from scorer {scorer!r}")
