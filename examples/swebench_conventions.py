@@ -79,7 +79,7 @@ def main(argv: list[str] | None = None) -> int:
     print(f"entries: {len(runs)} ({old_format} list every outcome, {rest} do not)")
     print(f"reference instances: {len(ids)}")
     for key, label in OUTCOMES:
-        print(f"entries with {label}: {len(entries[key])} ({totals[key]} distinct ids)")
+        print(f"entries with {label}: {len(entries[key])} ({totals[key]} ids, summed over entries)")
     print(f"entries with any of these: {len(affected)}")
     print(f"gap, all entries: median {statistics.median(gaps):.4f}, max {max(gaps):.4f}")
     if affected_gaps:

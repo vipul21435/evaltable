@@ -151,13 +151,13 @@ $ python examples/swebench_conventions.py DATA --write-items verified-ids.txt
 split: verified
 entries: 135 (13 list every outcome, 122 do not)
 reference instances: 500
-entries with ids under no_generation (no log folder or no patch.diff): 92 (1109 distinct ids)
-entries with ids under no_logs (patch.diff without test output): 41 (216 distinct ids)
-entries with ids under test_timeout: 6 (10 distinct ids)
-entries with ids under install_fail: 1 (5 distinct ids)
-entries with ids under reset_failed: 6 (47 distinct ids)
-entries with ids under test_errored: 0 (0 distinct ids)
-entries with reference ids listed under no outcome: 6 (41 distinct ids)
+entries with ids under no_generation (no log folder or no patch.diff): 92 (1109 ids, summed over entries)
+entries with ids under no_logs (patch.diff without test output): 41 (216 ids, summed over entries)
+entries with ids under test_timeout: 6 (10 ids, summed over entries)
+entries with ids under install_fail: 1 (5 ids, summed over entries)
+entries with ids under reset_failed: 6 (47 ids, summed over entries)
+entries with ids under test_errored: 0 (0 ids, summed over entries)
+entries with reference ids listed under no outcome: 6 (41 ids, summed over entries)
 entries with any of these: 108
 gap, all entries: median 0.0031, max 0.2177
 gap, entries with any of these: median 0.0046, mean 0.0122

@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+import zlib
 from collections.abc import Sequence
 from pathlib import Path
 
@@ -213,7 +214,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = parser.parse_args(argv)
     try:
         return int(args.func(args))
-    except (ValueError, OSError, RuntimeError) as exc:
+    except (ValueError, OSError, RuntimeError, EOFError, OverflowError, zlib.error) as exc:
         print(f"evaltable: error: {exc}", file=sys.stderr)
         return 2
 

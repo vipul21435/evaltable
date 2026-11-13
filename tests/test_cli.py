@@ -177,3 +177,19 @@ def test_same_run_id_from_two_files(tmp_path, capsys):
     capsys.readouterr()
     assert main(["check", A, str(copy)]) == 1
     assert "repeat" in capsys.readouterr().out
+
+
+def test_truncated_gzip_is_a_read_error(tmp_path, capsys):
+    import gzip
+    import json
+
+    from evaltable.cli import main
+
+    whole = tmp_path / "whole.jsonl.gz"
+    with gzip.open(whole, "wt", encoding="utf-8") as fh:
+        for i in range(200):
+            fh.write(json.dumps({"item_id": f"q{i}", "score": 1}) + "\n")
+    cut = tmp_path / "cut.jsonl.gz"
+    cut.write_bytes(whole.read_bytes()[:-20])
+    assert main(["summary", str(cut)]) == 2
+    assert "evaltable: error:" in capsys.readouterr().err
