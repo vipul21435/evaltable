@@ -110,7 +110,7 @@ compared within and across runs.
 
 | format | source read for the structure | item, run, sample | status |
 |---|---|---|---|
-| `swebench` results.json | SWE-bench/experiments `evaluation/<split>/<entry>/results/results.json` | instance id, entry folder | `resolved` 1; `no_generation` missing; `test_timeout` timeout; `install_fail`, `reset_failed`, `test_errored`, no logs error; `no_apply` and the rest 0 |
+| `swebench` results.json | SWE-bench/experiments `evaluation/<split>/<entry>/results/results.json` and `analysis/get_results.py` | instance id, entry folder | `resolved` 1; `no_generation` (no log folder or no `patch.diff`) missing; `test_timeout` timeout; `install_fail`, `reset_failed`, `test_errored`, `no_logs` (`patch.diff` without test output) error; `no_apply` (older files) and the rest 0 |
 | `swebench` run report | `make_run_report` in SWE-bench `swebench/harness/reporting.py` | instance id, file name | `resolved_ids` 1, `unresolved_ids` 0, `error_ids` error, `empty_patch_ids` and `incomplete_ids` missing |
 | `lm-eval` | `evaluator.py` and `loggers/evaluation_tracker.py` of lm-evaluation-harness (`--log_samples`) | `<task>/<doc_id>`, model directory | all ok; score = chosen metric |
 | `inspect` | `log/_log.py`, `scorer/_metric.py`, `log/_recorders/eval.py` of inspect_ai; the Log Files docs page | sample id, `eval.model`, epoch - 1 | `error` error; time/working limit without a score timeout; unscored missing; `value_to_float` for values |
@@ -129,54 +129,47 @@ generation (arXiv:2305.01210).
 Both data sets are downloaded by `scripts/fetch_public_data.py` at pinned commits; none of the files are
 committed here.
 
-**SWE-bench Verified submissions.** Source: the public
+**SWE-bench Verified entries.** Source: the public
 [SWE-bench/experiments](https://github.com/SWE-bench/experiments) repository at commit `40f164d5b8f1`. That
 repository carries no licence file (GitHub reports none), so only the fetch script and the derived numbers
 below are in this repository. 135 of the 182 entries under `evaluation/verified/` have a
 `results/results.json` at that commit; the other 47 return 404 and are skipped. The reference set is the union
 of instance ids listed by any entry, 500 ids.
 
+What the outcome lists mean: newer files are written by `analysis/get_results.py` in that repository from the
+logs uploaded with the entry. An id is under `no_generation` when the entry's `logs/` has no folder for it or
+the folder has no `patch.diff`, and under `no_logs` when there is a `patch.diff` but no `test_output.txt`. So
+a file cannot tell a patch that was never produced from logs that were not uploaded. The counts and gaps
+below describe what was uploaded; they are not a statement about any system.
+
 ```
 $ python scripts/fetch_public_data.py DATA
-$ python examples/swebench_conventions.py DATA
+$ python examples/swebench_conventions.py DATA --write-items verified-ids.txt
 split: verified
-submissions: 135 (13 list every outcome, 122 do not)
+entries: 135 (13 list every outcome, 122 do not)
 reference instances: 500
-with missing instances (no patch): 92
-with errored or timed-out instances: 51
-with either: 108
-gap, all submissions: median 0.0025, max 0.2177
-gap, affected submissions: median 0.0045, mean 0.0120
+entries with ids under no_generation (no log folder or no patch.diff): 92 (1109 distinct ids)
+entries with ids under no_logs (patch.diff without test output): 41 (216 distinct ids)
+entries with ids under test_timeout: 6 (10 distinct ids)
+entries with ids under install_fail: 1 (5 distinct ids)
+entries with ids under reset_failed: 6 (47 distinct ids)
+entries with ids under test_errored: 0 (0 distinct ids)
+entries with reference ids listed under no outcome: 0 (0 distinct ids)
+entries with any of these: 108
+gap, all entries: median 0.0025, max 0.2177
+gap, entries with any of these: median 0.0045, mean 0.0120
 gap >= 0.01: 32
 gap >= 0.05: 5
 gap >= 0.10: 2
-
-largest 5 gaps (errors as failures -> errors left out):
-  20250516_cortexa_o3: 0.6820 -> 0.8997 (gap +0.2177; missing 121, error 0, timeout 0)
-  20250110_learn_by_interact_claude3.5: 0.6020 -> 0.7341 (gap +0.1321; missing 0, error 90, timeout 0)
-  20260901_mini-v2.4.2_gemini-3-5-flash: 0.7180 -> 0.8141 (gap +0.0961; missing 59, error 0, timeout 0)
-  20241221_codestory_midwit_claude-3-5-sonnet_swe-search: 0.6220 -> 0.6835 (gap +0.0615; missing 45, error 0, timeout 0)
-  20240820_honeycomb: 0.4060 -> 0.4624 (gap +0.0564; missing 14, error 47, timeout 0)
 ```
 
-So 108 of 135 entries have at least one instance without a patch or without an evaluation, and for 32 of them
-the score moves by a point or more between the two conventions. The errors-as-failures column is resolved
-instances out of 500. The same comparison for two entries from the command line, with the
-500 ids written one per line to `verified-ids.txt`:
+So 108 of the 135 files list at least one instance without a test result, and for 32 of them the score
+moves by a point or more between the two conventions. The errors-as-failures score is resolved instances out
+of 500, the rate `get_results.py` itself prints. `--write-items` saves the 500 reference ids, one per line;
+with them any one entry's file reads the same way from the command line:
 
 ```
-$ evaltable summary --items verified-ids.txt \
-    DATA/swebench/evaluation/verified/20250516_cortexa_o3/results/results.json \
-    DATA/swebench/evaluation/verified/20240820_honeycomb/results/results.json
-run                  items  present   ok  error  timeout  missing  coverage  error rate       errors as failures          errors left out  n left in      gap
-20240820_honeycomb     500      486  439     47        0       14     0.878       0.097  0.4060 [0.3638, 0.4496]  0.4624 [0.4163, 0.5092]        439  +0.0564
-20250516_cortexa_o3    500      379  379      0        0      121     0.758       0.000  0.6820 [0.6399, 0.7213]  0.8997 [0.8654, 0.9261]        379  +0.2177
-(scores with 95% Wilson intervals)
-
-items present in both runs
-                     20240820_honeycomb  20250516_cortexa_o3
-20240820_honeycomb                  486                  371
-20250516_cortexa_o3                 371                  379
+$ evaltable summary --items verified-ids.txt DATA/swebench/evaluation/verified/<entry>/results/results.json
 ```
 
 **Inspect logs.** Source: the evaluation logs kept in the test suite of
@@ -214,11 +207,14 @@ not comparable
   report, lm-evaluation-harness, OpenAI Evals, HumanEval and EvalPlus readers are written from the harnesses'
   source code and tested on fixtures with that structure and synthetic values. The Open LLM Leaderboard
   sample files (lm-eval output) need a Hugging Face login, so they were not used.
-- The status mapping involves choices other people may make differently: a SWE-bench instance with no patch
-  is `missing` (so it is a failure in the first convention and left out in the second), a patch that does not
-  apply is a plain failure, and EvalPlus and HumanEval timeouts are `timeout`.
-- Newer SWE-bench `results.json` files list only resolved instances, instances without a patch and instances
-  without logs; reading one needs the split's instance ids (`--items`).
+- The status mapping involves choices other people may make differently. A SWE-bench id under
+  `no_generation` (no log folder or no `patch.diff` uploaded) is `missing`, so it is a failure in the first
+  convention and left out in the second; an id under `no_logs` (`patch.diff` without test output) is `error`.
+  In the 13 older files a patch that did not apply is listed under `no_apply` and read as a plain failure; in
+  the 122 newer files the same case has a `patch.diff` and no test output, so it is under `no_logs` and read
+  as `error`. EvalPlus and HumanEval timeouts are `timeout`.
+- Newer SWE-bench `results.json` files list only `resolved`, `no_generation` and `no_logs`; reading one needs
+  the split's instance ids (`--items`).
 - Recent Inspect `.eval` archives use zstd compression, which Python's `zipfile` reads only from 3.14. Convert
   them with `inspect log convert --to json` first.
 - Intervals treat the per-item mean as one Bernoulli outcome; there is no correction for several samples per

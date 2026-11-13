@@ -8,17 +8,22 @@ instance ids. Older entries list every outcome (``no_generation``, ``generated``
 ``install_fail``, ``reset_failed``, ``no_apply``, ``applied``, ``test_errored``,
 ``test_timeout``, ``resolved``); newer entries list only ``no_generation``, ``no_logs`` and
 ``resolved``, so the unresolved instances can only be recovered from the split's instance ids
-(``items``). Each instance takes the first outcome that applies:
+(``items``). Newer files are written by ``analysis/get_results.py`` in that repository from the
+entry's uploaded ``logs/`` folder: an id is under ``no_generation`` when ``logs/`` has no folder
+for it or the folder has no ``patch.diff``, and under ``no_logs`` when it has ``patch.diff``
+but no ``test_output.txt``. A file therefore cannot tell a patch that was never produced from
+logs that were not uploaded, and in newer files a patch that failed to apply sits under
+``no_logs``. Each instance takes the first outcome that applies:
 
 ==========================================  ==========  =====
 outcome                                     status      score
 ==========================================  ==========  =====
 resolved                                    ok          1
-no_generation (no patch produced)           missing
+no_generation                               missing
 test_timeout                                timeout
 install_fail, reset_failed, test_errored    error
 generated without logs, or no_logs          error
-no_apply (patch did not apply)              ok          0
+no_apply (older files only)                 ok          0
 anything else in the reference set          ok          0
 ==========================================  ==========  =====
 
