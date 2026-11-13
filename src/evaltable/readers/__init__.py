@@ -149,13 +149,32 @@ def read_many(
     column_map: Mapping[str, str] | None = None,
     run_ids: Iterable[str | None] | None = None,
     options: ReadOptions | None = None,
+    distinct_runs: bool = False,
 ) -> EvalTable:
-    """Read and merge files; the result does not depend on their order."""
+    """Read and merge files; the result does not depend on their order.
+
+    With ``distinct_runs`` two files that give one run id rows for the same (item, sample) are
+    refused, since their rows would silently merge into one run. Files that share a run id but
+    not items (for example several lm-eval task files of one model) are fine.
+    """
     paths = list(paths)
     runs = list(run_ids) if run_ids is not None else [None] * len(paths)
     if len(runs) != len(paths):
         raise ValueError(f"{len(runs)} run id(s) for {len(paths)} file(s)")
     tables = [read(p, fmt, column_map, r, options) for p, r in zip(paths, runs, strict=True)]
+    if distinct_runs:
+        owner: dict[tuple[str, str, int], str | Path] = {}
+        for path, table in zip(paths, tables, strict=True):
+            mine = {row.key() for row in table}
+            for key in mine:
+                other = owner.get(key)
+                if other is not None and other != path:
+                    raise ValueError(
+                        f"{other} and {path} both give run {key[0]!r} rows for the same items; "
+                        "pass --run once per file"
+                    )
+            for key in mine:
+                owner.setdefault(key, path)
     return EvalTable.concat(tables)
 
 

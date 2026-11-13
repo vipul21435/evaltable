@@ -69,7 +69,8 @@ evaltable summary FILE... [--items ids.txt] [--confidence 0.95] [--json]
 All of them take `--format` (default: detected from the extension and content), `--run` (once per file),
 `--items` (reference item ids, one per line), `--map` for generic CSV/JSONL (`item=question_id,score=correct`),
 `--metric` (lm-eval metric, Inspect scorer or OpenAI Evals metrics key), `--filter` (lm-eval filter) and
-`--tests base|plus` (EvalPlus). `check` exits 0 when the runs are comparable under the flags given, 1 when
+`--tests base|plus` (EvalPlus). `merge`, `pivot` and `summary` refuse two files that give one run id rows
+for the same items (pass `--run` once per file); `check` reads them and reports the repeated rows. `check` exits 0 when the runs are comparable under the flags given, 1 when
 they are not, and 2 on bad input. The same functions are importable: `evaltable.readers.read_many`,
 `evaltable.summary.summarize`, `evaltable.checks.run_checks`, `evaltable.pivot.pivot`.
 
@@ -111,7 +112,7 @@ compared within and across runs.
 | format | source read for the structure | item, run, sample | status |
 |---|---|---|---|
 | `swebench` results.json | SWE-bench/experiments `evaluation/<split>/<entry>/results/results.json` and `analysis/get_results.py` | instance id, entry folder | `resolved` 1; `no_generation` (no log folder or no `patch.diff`) missing; `test_timeout` timeout; `install_fail`, `reset_failed`, `test_errored`, `no_logs` (`patch.diff` without test output) error; `no_apply` (older files) and the rest 0 |
-| `swebench` run report | `make_run_report` in SWE-bench `swebench/harness/reporting.py` | instance id, file name | `resolved_ids` 1, `unresolved_ids` 0, `error_ids` error, `empty_patch_ids` and `incomplete_ids` missing |
+| `swebench` run report | `make_run_report` in SWE-bench `swebench/harness/reporting.py` | instance id, file name (its directory for `results.json`) | `resolved_ids` 1, `unresolved_ids` 0, `error_ids` error, `empty_patch_ids` and `incomplete_ids` missing |
 | `lm-eval` | `evaluator.py` and `loggers/evaluation_tracker.py` of lm-evaluation-harness (`--log_samples`) | `<task>/<doc_id>`, model directory | all ok; score = chosen metric |
 | `inspect` | `log/_log.py`, `scorer/_metric.py`, `log/_recorders/eval.py` of inspect_ai; the Log Files docs page | sample id, `eval.model`, epoch - 1 | `error` error; time/working limit without a score timeout; unscored missing; `value_to_float` for values |
 | `openai-evals` | `evals/record.py` and `evals/base.py` of openai/evals | `sample_id`, completion functions, event order | `match.correct` 1/0 (or a `metrics` key); `error` event or no scoring event error |

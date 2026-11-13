@@ -85,7 +85,7 @@ def test_swebench_new_results_need_items(tmp_path):
         "a-3": (Status.OK, 1.0),
         "a-4": (Status.OK, 0.0),
     }
-    assert table.runs() == ["results"]
+    assert table.runs() == [tmp_path.name]
 
 
 def test_swebench_report(tmp_path):

@@ -80,6 +80,9 @@ def _default_run(path: Path) -> str:
     # evaluation/<split>/<submission>/results/results.json -> <submission>
     if path.parent.name == "results" and path.parent.parent.name:
         return path.parent.parent.name
+    # The harness writes its run report to <run_id>/results.json -> <run_id>
+    if path.stem == "results" and path.parent.name:
+        return path.parent.name
     return path.stem
 
 

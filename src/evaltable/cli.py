@@ -79,7 +79,9 @@ def _load(args: argparse.Namespace) -> EvalTable:
         tests=args.tests,
         items=tuple(reference) if reference is not None else None,
     )
-    return read_many(files, args.format, column_map, runs, options)
+    # check reports repeated rows itself; the other commands would merge them silently.
+    distinct = args.command != "check"
+    return read_many(files, args.format, column_map, runs, options, distinct_runs=distinct)
 
 
 def _reference(args: argparse.Namespace) -> list[str] | None:

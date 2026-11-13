@@ -146,3 +146,34 @@ def test_bad_input_exits_two(tmp_path, capsys, name, content):
     assert main(["check", str(path)]) == 2
     err = capsys.readouterr().err
     assert err.startswith("evaltable: error:") and name in err
+
+
+def test_same_run_id_from_two_files(tmp_path, capsys):
+    report = {
+        "total_instances": 2,
+        "resolved_ids": ["x-1"],
+        "unresolved_ids": ["x-2"],
+        "error_ids": [],
+    }
+    paths = []
+    for run in ("run-one", "run-two"):
+        path = tmp_path / run / "results.json"
+        path.parent.mkdir()
+        path.write_text(json.dumps(report))
+        paths.append(str(path))
+    assert read(paths[0]).runs() == ["run-one"]
+    assert main(["summary", "--json", *paths]) == 0
+    assert [r["run_id"] for r in json.loads(capsys.readouterr().out)["runs"]] == [
+        "run-one",
+        "run-two",
+    ]
+    copy = tmp_path / "copy" / "model_a.jsonl"
+    copy.parent.mkdir()
+    copy.write_text(Path(A).read_text())
+    for command in ("summary", "pivot", "merge"):
+        assert main([command, A, str(copy)]) == 2
+        assert "pass --run once per file" in capsys.readouterr().err
+    assert main(["summary", A, str(copy), "--run", "a1", "--run", "a2"]) == 0
+    capsys.readouterr()
+    assert main(["check", A, str(copy)]) == 1
+    assert "repeat" in capsys.readouterr().out
