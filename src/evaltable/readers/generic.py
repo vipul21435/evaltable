@@ -7,6 +7,7 @@ The long table that evaltable writes is itself read by these readers with the de
 from __future__ import annotations
 
 import csv
+import gzip
 import json
 import math
 from collections.abc import Iterable, Mapping
@@ -143,8 +144,10 @@ def read_csv(
 
 
 def iter_jsonl(path: str | Path) -> Iterable[dict[str, Any]]:
-    """Yield the JSON objects of a JSONL file, skipping blank lines."""
-    with Path(path).open(encoding="utf-8") as handle:
+    """Yield the JSON objects of a JSONL file (gzipped when it ends in .gz), skipping blanks."""
+    path = Path(path)
+    opener = gzip.open if path.suffix.lower() == ".gz" else open
+    with opener(path, "rt", encoding="utf-8") as handle:
         for number, line in enumerate(handle, start=1):
             if not line.strip():
                 continue
