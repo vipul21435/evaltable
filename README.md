@@ -104,7 +104,9 @@ shown when a score lies outside [0, 1].
 
 **Checks.** `item_sets`: reference items each run lacks. `duplicates`: repeated (run, item, sample) keys.
 `errors`: errored or timed-out items per run, with both scores over the items the run has and their gap
-(fails when the gap exceeds `--max-gap`, default 0). `sample_counts`: distinct sample indexes per item,
+(fails when the gap exceeds `--max-gap`, default 0). This gap leaves missing items out of both scores, so
+it is smaller than the `summary` gap whenever a run lacks items: `check --allow-missing --max-gap 0.01` can
+pass a run whose `summary` gap is far larger. `sample_counts`: distinct sample indexes per item,
 compared within and across runs.
 
 **Readers.** Each module in `src/evaltable/readers/` states its source and what it ignores.

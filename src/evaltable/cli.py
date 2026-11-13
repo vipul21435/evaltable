@@ -185,7 +185,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--max-gap",
         type=float,
         default=0.0,
-        help="largest tolerated gap between the two error conventions (default: 0)",
+        help=(
+            "largest tolerated gap between the two conventions caused by errored or timed-out "
+            "items, over the items a run has; missing items are the item_sets check and are "
+            "not part of this gap (default: 0)"
+        ),
     )
     p.add_argument("--json", action="store_true", help="print the report as JSON")
     p.set_defaults(func=_cmd_check)
