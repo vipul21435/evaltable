@@ -206,10 +206,17 @@ not comparable
 
 ## Limitations
 
-- Only the SWE-bench `results.json` and Inspect readers have been run on real public files. The SWE-bench run
-  report, lm-evaluation-harness, OpenAI Evals, HumanEval and EvalPlus readers are written from the harnesses'
-  source code and tested on fixtures with that structure and synthetic values. The Open LLM Leaderboard
-  sample files (lm-eval output) need a Hugging Face login, so they were not used.
+- Only the SWE-bench `results.json` and Inspect readers have been run on real public files, and the four
+  Inspect logs are small: 26 samples, one scorer, one epoch, no errors and no limits. The Inspect paths for
+  errors, limits, several epochs and several scorers, and the SWE-bench run report, lm-evaluation-harness,
+  OpenAI Evals, HumanEval and EvalPlus readers, are tested only on fixtures written from the harnesses' source
+  code with synthetic values. The Open LLM Leaderboard sample files (lm-eval output) need a Hugging Face
+  login, so they were not used.
+- An Inspect score whose value is a dict or a list is read as ok with score 0, as Inspect's own conversion
+  does, but without a warning.
+- `summary` and `check` ignore items outside `--items` without saying so.
+- Item ids are compared as raw text: `1` and `01` are two items, and so are the composed and decomposed
+  Unicode forms of one accented id.
 - The status mapping involves choices other people may make differently. A SWE-bench id under
   `no_generation` (no log folder or no `patch.diff` uploaded) is `missing`, so it is a failure in the first
   convention and left out in the second; an id under `no_logs` (`patch.diff` without test output) is `error`.
