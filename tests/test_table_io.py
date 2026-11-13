@@ -136,3 +136,36 @@ def test_parquet_round_trip(tmp_path):
     assert data[1]["tokens"] == 12
     with pytest.raises(ValueError):
         write_table(make_table(), "-", "parquet")
+
+
+def test_csv_with_byte_order_mark_and_gzip(tmp_path):
+    import gzip
+
+    text = "item_id,score\nq1,1\nq2,0\n"
+    bom = tmp_path / "bom.csv"
+    bom.write_bytes(b"\xef\xbb\xbf" + text.encode())
+    assert [r.item_id for r in read(bom)] == ["q1", "q2"]
+    zipped = tmp_path / "zipped.csv.gz"
+    with gzip.open(zipped, "wt", encoding="utf-8") as handle:
+        handle.write(text)
+    table = read(zipped)
+    assert [r.score for r in table] == [1.0, 0.0] and table.runs() == ["zipped"]
+    tabbed = tmp_path / "tabbed.tsv.gz"
+    with gzip.open(tabbed, "wt", encoding="utf-8") as handle:
+        handle.write(text.replace(",", "\t"))
+    assert [r.item_id for r in read(tabbed)] == ["q1", "q2"]
+
+
+@pytest.mark.parametrize("value", [1.7, True, "1.5", "x", [1]])
+def test_non_integer_sample_index_is_refused(tmp_path, value):
+    path = tmp_path / "s.jsonl"
+    path.write_text(json.dumps({"item_id": "a", "score": 1, "sample_index": value}) + "\n")
+    with pytest.raises(ValueError, match="not an integer"):
+        read_jsonl(path)
+
+
+@pytest.mark.parametrize("value,expected", [(2, 2), (2.0, 2), ("3", 3), (" 4 ", 4)])
+def test_integer_sample_index_forms(tmp_path, value, expected):
+    path = tmp_path / "s.jsonl"
+    path.write_text(json.dumps({"item_id": "a", "score": 1, "sample_index": value}) + "\n")
+    assert read_jsonl(path).rows[0].sample_index == expected

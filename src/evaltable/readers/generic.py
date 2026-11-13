@@ -78,6 +78,23 @@ def _is_blank(value: Any) -> bool:
     return value is None or (isinstance(value, str) and value.strip() == "")
 
 
+def _parse_sample(value: Any, number: int) -> int:
+    """A sample index: an integer, an integral float, or a string of digits."""
+    if isinstance(value, bool):
+        ok = False
+    elif isinstance(value, int):
+        return value
+    elif isinstance(value, float):
+        ok = value.is_integer()
+    elif isinstance(value, str):
+        ok = value.strip().lstrip("-").isdigit()
+    else:
+        ok = False
+    if not ok:
+        raise ValueError(f"record {number}: sample index {value!r} is not an integer")
+    return int(float(value)) if isinstance(value, float) else int(value)
+
+
 def rows_from_records(
     records: Iterable[Mapping[str, Any]],
     column_map: Mapping[str, str] | None = None,
@@ -113,12 +130,7 @@ def rows_from_records(
         else:
             status = Status.parse(raw_status)
         raw_sample = record.get(cmap["sample"])
-        try:
-            sample = 0 if _is_blank(raw_sample) else int(raw_sample)
-        except (TypeError, ValueError):
-            raise ValueError(
-                f"record {number}: sample index {raw_sample!r} is not an integer"
-            ) from None
+        sample = 0 if _is_blank(raw_sample) else _parse_sample(raw_sample, number)
         metadata = {
             key: value
             for key, value in record.items()
@@ -148,15 +160,21 @@ def read_csv(
     run_id: str | None = None,
     delimiter: str | None = None,
 ) -> EvalTable:
-    """Read a CSV (or TSV, by extension) file with a header row."""
+    """Read a CSV (or TSV, by extension) file with a header row, gzipped when it ends in .gz.
+
+    A UTF-8 byte-order mark is allowed.
+    """
     path = Path(path)
+    gzipped = path.suffix.lower() == ".gz"
+    base = path.with_suffix("") if gzipped else path
     if delimiter is None:
-        delimiter = "\t" if path.suffix.lower() == ".tsv" else ","
-    with path.open(newline="", encoding="utf-8") as handle:
+        delimiter = "\t" if base.suffix.lower() == ".tsv" else ","
+    opener = gzip.open if gzipped else open
+    with opener(path, "rt", newline="", encoding="utf-8-sig") as handle:
         reader = csv.DictReader(handle, delimiter=delimiter)
         with _naming(path):
             rows = rows_from_records(
-                reader, column_map, run_id, default_run=path.stem, drop_blank_metadata=True
+                reader, column_map, run_id, default_run=base.stem, drop_blank_metadata=True
             )
     return EvalTable(rows)
 
@@ -165,7 +183,7 @@ def iter_jsonl(path: str | Path) -> Iterable[dict[str, Any]]:
     """Yield the JSON objects of a JSONL file (gzipped when it ends in .gz), skipping blanks."""
     path = Path(path)
     opener = gzip.open if path.suffix.lower() == ".gz" else open
-    with opener(path, "rt", encoding="utf-8") as handle:
+    with opener(path, "rt", encoding="utf-8-sig") as handle:
         for number, line in enumerate(handle, start=1):
             if not line.strip():
                 continue

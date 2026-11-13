@@ -57,7 +57,7 @@ def _base_suffix(path: Path) -> str:
 
 def _first_record(path: Path) -> dict[str, Any] | None:
     opener = gzip.open if path.suffix.lower() == ".gz" else open
-    with opener(path, "rt", encoding="utf-8") as handle:
+    with opener(path, "rt", encoding="utf-8-sig") as handle:
         for line in handle:
             if line.strip():
                 try:
