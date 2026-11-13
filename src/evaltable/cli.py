@@ -12,7 +12,7 @@ from . import __version__
 from .checks import CheckOptions, run_checks
 from .model import EvalTable
 from .pivot import PIVOT_VALUES, pivot
-from .readers import FORMATS, parse_column_map, read
+from .readers import FORMATS, ReadOptions, parse_column_map, read_many
 from .render import check_text, overlap_text, summary_text
 from .summary import overlap_matrix, summarize
 from .writers import WRITE_FORMATS, write_table
@@ -39,14 +39,23 @@ def _add_inputs(parser: argparse.ArgumentParser, many: bool = True) -> None:
         metavar="NAME",
         help="run id for an input file; give once per file, in order (default: from the file)",
     )
-
-
-def _add_reference(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--items",
         default=None,
         metavar="FILE",
         help="reference item ids, one per line (default: union of items over all runs)",
+    )
+    parser.add_argument(
+        "--metric",
+        default=None,
+        help="lm-eval metric, Inspect scorer or OpenAI Evals metrics key (default: the first)",
+    )
+    parser.add_argument("--filter", default=None, help="lm-eval filter (default: every filter)")
+    parser.add_argument(
+        "--tests",
+        default="plus",
+        choices=["base", "plus"],
+        help="EvalPlus tests that must pass (default: plus, i.e. base and plus)",
     )
 
 
@@ -63,11 +72,14 @@ def _load(args: argparse.Namespace) -> EvalTable:
     if runs is not None and len(runs) != len(files):
         raise ValueError(f"--run was given {len(runs)} time(s) for {len(files)} file(s)")
     column_map = parse_column_map(args.map)
-    tables = [
-        read(path, args.format, column_map, runs[k] if runs else None)
-        for k, path in enumerate(files)
-    ]
-    return EvalTable.concat(tables)
+    reference = _reference(args)
+    options = ReadOptions(
+        metric=args.metric,
+        filter=args.filter,
+        tests=args.tests,
+        items=tuple(reference) if reference is not None else None,
+    )
+    return read_many(files, args.format, column_map, runs, options)
 
 
 def _reference(args: argparse.Namespace) -> list[str] | None:
@@ -148,7 +160,6 @@ def build_parser() -> argparse.ArgumentParser:
 
     p = sub.add_parser("merge", help="join many files into one long table")
     _add_inputs(p)
-    _add_reference(p)
     p.add_argument(
         "--fill-missing",
         action="store_true",
@@ -159,7 +170,6 @@ def build_parser() -> argparse.ArgumentParser:
 
     p = sub.add_parser("check", help="exit 1 when runs are not comparable under the flags")
     _add_inputs(p)
-    _add_reference(p)
     p.add_argument("--allow-missing", action="store_true", help="tolerate differing item sets")
     p.add_argument("--allow-duplicates", action="store_true", help="tolerate repeated rows")
     p.add_argument(
@@ -182,7 +192,6 @@ def build_parser() -> argparse.ArgumentParser:
 
     p = sub.add_parser("summary", help="per-run scores both ways, coverage, overlap")
     _add_inputs(p)
-    _add_reference(p)
     p.add_argument("--confidence", type=float, default=0.95, help="interval level (default 0.95)")
     p.add_argument("--json", action="store_true", help="print the summary as JSON")
     p.set_defaults(func=_cmd_summary)
