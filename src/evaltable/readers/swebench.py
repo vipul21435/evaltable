@@ -24,6 +24,7 @@ test_timeout                                timeout
 install_fail, reset_failed, test_errored    error
 generated without logs, or no_logs          error
 no_apply (older files only)                 ok          0
+in no list of an older file (``items``)     missing
 anything else in the reference set          ok          0
 ==========================================  ==========  =====
 
@@ -109,9 +110,15 @@ def results_rows(
     errors = lists.get("install_fail", empty) | lists.get("reset_failed", empty)
     errors |= lists.get("test_errored", empty) | lists.get("no_logs", empty)
     no_logs = lists["generated"] - lists.get("with_logs", empty) if "generated" in lists else empty
+    # An older file accounts for every instance it saw under generated or no_generation; a
+    # reference id outside both was not seen at all, the same case newer files list under
+    # no_generation.
+    unseen = reference - listed if "generated" in lists else empty
     rows = []
     for iid in sorted(reference | listed):
-        if iid in lists.get("resolved", empty):
+        if iid in unseen:
+            status, score, category = Status.MISSING, None, "not_listed"
+        elif iid in lists.get("resolved", empty):
             status, score, category = Status.OK, 1.0, "resolved"
         elif iid in lists.get("no_generation", empty):
             status, score, category = Status.MISSING, None, "no_generation"

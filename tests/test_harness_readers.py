@@ -415,3 +415,15 @@ def test_detect_unknown_json_and_gzip(tmp_path):
     assert read(path).rows[0].score == 1.0
     plain = write_jsonl(tmp_path / "plain.jsonl", [{"item_id": "a", "score": 1}])
     assert detect_format(plain) == "jsonl"
+
+
+def test_swebench_old_results_unlisted_reference_ids_are_missing(tmp_path):
+    path = write_json(tmp_path / "e" / "results" / "results.json", OLD_RESULTS)
+    items = tuple(OLD_RESULTS["generated"] + OLD_RESULTS["no_generation"] + ["p__q-9"])
+    table = read(path, options=ReadOptions(items=items))
+    row = by_item(table)[("p__q-9", 0)]
+    assert (row.status, row.metadata["swebench_outcome"]) == (Status.MISSING, "not_listed")
+    # The listed ids read the same with or without --items.
+    without = {r.item_id: (r.status, r.score) for r in read(path)}
+    with_items = {r.item_id: (r.status, r.score) for r in table if r.item_id != "p__q-9"}
+    assert without == with_items

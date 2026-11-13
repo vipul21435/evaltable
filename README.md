@@ -154,16 +154,16 @@ entries with ids under test_timeout: 6 (10 distinct ids)
 entries with ids under install_fail: 1 (5 distinct ids)
 entries with ids under reset_failed: 6 (47 distinct ids)
 entries with ids under test_errored: 0 (0 distinct ids)
-entries with reference ids listed under no outcome: 0 (0 distinct ids)
+entries with reference ids listed under no outcome: 6 (41 distinct ids)
 entries with any of these: 108
-gap, all entries: median 0.0025, max 0.2177
-gap, entries with any of these: median 0.0045, mean 0.0120
+gap, all entries: median 0.0031, max 0.2177
+gap, entries with any of these: median 0.0046, mean 0.0122
 gap >= 0.01: 32
 gap >= 0.05: 5
 gap >= 0.10: 2
 ```
 
-So 108 of the 135 files list at least one instance without a test result, and for 32 of them the score
+So 108 of the 135 files leave at least one reference instance without a test result, and for 32 of them the score
 moves by a point or more between the two conventions. The errors-as-failures score is resolved instances out
 of 500, the rate `get_results.py` itself prints. `--write-items` saves the 500 reference ids, one per line;
 with them any one entry's file reads the same way from the command line:
