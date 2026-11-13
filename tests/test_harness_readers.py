@@ -443,3 +443,23 @@ def test_evalplus_base_only_file_needs_tests_base(tmp_path):
         read(path)
     base = read(path, options=ReadOptions(tests="base"))
     assert [(r.status, r.score) for r in base] == [(Status.OK, 1.0), (Status.OK, 0.0)]
+
+
+def test_openai_evals_without_the_chosen_score_is_refused(tmp_path):
+    records = [
+        {"spec": {"completion_fns": ["m"], "eval_name": "graded.dev.v0", "run_id": "r1"}},
+        oai_event(0, "s.0", "sampling", {"prompt": "p", "sampled": ["a"]}),
+        oai_event(1, "s.0", "metrics", {"choice": "Y", "score": 1.0}),
+        oai_event(2, "s.1", "metrics", {"choice": "N", "score": 0.0}),
+    ]
+    path = write_jsonl(tmp_path / "graded.jsonl", records)
+    with pytest.raises(ValueError, match="metrics keys seen: choice, score"):
+        read(path)
+    with pytest.raises(ValueError, match="'scroe'"):
+        read_openai_evals(path, metric="scroe")
+    assert [r.score for r in read_openai_evals(path, metric="score")] == [1.0, 0.0]
+    # A file in which every sample errored is still read, as errors.
+    errored = write_jsonl(
+        tmp_path / "errored.jsonl", records[:1] + [oai_event(0, "s.0", "error", {})]
+    )
+    assert [r.status for r in read(errored)] == [Status.ERROR]

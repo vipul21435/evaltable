@@ -10,7 +10,9 @@ score comes from ``match`` events (``data.correct``, 1 or 0); with a metric name
 that key of ``metrics`` events instead. Several scoring events for one sample become sample
 indexes 0, 1, ... in ``event_id`` order. A sample with an ``error`` event and no scoring event
 is ``error``; a sample that has other events (for example ``sampling``) but no scoring event is
-also ``error``, with ``no scoring event`` in its metadata.
+also ``error``, with ``no scoring event`` in its metadata. A file in which no event carries the
+chosen score (a model-graded eval read without a metric name, or a mistyped one) is refused,
+listing the ``metrics`` keys it has.
 
 Ignored: ``sampling``, ``embedding``, ``cond_logp``, ``pick_option``, ``raw`` and ``extra``
 events (apart from marking the sample as seen), ``expected``/``picked`` values and the
@@ -52,6 +54,7 @@ def read_openai_evals(
     scored: dict[str, list[float]] = defaultdict(list)
     errors: dict[str, str] = {}
     order: dict[str, None] = {}
+    metric_keys: set[str] = set()
     for event in sorted(events, key=lambda e: e.get("event_id", 0)):
         sid = event.get("sample_id")
         if sid is None:
@@ -60,6 +63,8 @@ def read_openai_evals(
         order.setdefault(sid)
         data = event.get("data") or {}
         kind = event.get("type")
+        if kind == "metrics" and isinstance(data, dict):
+            metric_keys.update(data)
         if metric is None and kind == "match":
             scored[sid].append(1.0 if data.get("correct") else 0.0)
         elif metric is not None and kind == "metrics" and metric in data:
@@ -68,6 +73,11 @@ def read_openai_evals(
                 scored[sid].append(value)
         elif kind == "error":
             errors.setdefault(sid, str(data.get("message", data.get("type", "error")))[:200])
+    if order and not any(scored.values()) and set(order) - set(errors):
+        # Nothing carries the chosen score: a model-graded eval without --metric, or a typo.
+        source = "match events" if metric is None else f"metrics events with key {metric!r}"
+        seen = ", ".join(sorted(metric_keys)) or "none"
+        raise ValueError(f"{path}: no {source}; metrics keys seen: {seen}")
     rows: list[Row] = []
     for sid in order:
         if scored.get(sid):
