@@ -13,11 +13,13 @@ EvalPlus. Source: ``evalplus/evaluate.py`` and ``evalplus/eval/__init__.py`` in
 evalplus/evalplus. ``evalplus.evaluate`` writes ``*_eval_results.json`` (older versions
 ``*.eval_results.json``) with ``date``, ``hash`` and ``eval``, a map from ``task_id`` to a list of
 ``{task_id, solution, base_status, plus_status, base_fail_tests, plus_fail_tests}``, statuses
-being ``pass``, ``fail``, ``timeout`` or null. Mapping: with ``tests="plus"`` (default) a
-solution scores 1 when both statuses are ``pass``, as EvalPlus counts it; with ``tests="base"``
-only ``base_status`` counts. Any ``fail`` gives ok 0; otherwise a ``timeout`` gives
-``timeout``, and a null status gives ``error``. Ignored: ``solution``, the failing test inputs,
-``date`` and ``hash``.
+being ``pass``, ``fail`` or ``timeout``; ``plus_status`` is null when the plus tests were not
+run (``--base-only``). Mapping: with ``tests="plus"`` (default) a solution scores 1 when both
+statuses are ``pass``, as EvalPlus counts it; with ``tests="base"`` only ``base_status`` counts.
+Any ``fail`` gives ok 0; otherwise a ``timeout`` gives ``timeout``, and a remaining null status
+gives ``error``. A file whose every ``plus_status`` is null is refused under ``tests="plus"``
+with a pointer to ``tests="base"``. Ignored: ``solution``, the failing test inputs, ``date`` and
+``hash``.
 """
 
 from __future__ import annotations
@@ -91,6 +93,12 @@ def read_evalplus(path: str | Path, run_id: str | None = None, tests: str = "plu
     if not looks_like_evalplus(data):
         raise ValueError(f"{path} is not an EvalPlus eval_results.json")
     run = run_id or _evalplus_run(path)
+    solutions = [r for results in data["eval"].values() for r in results]
+    if tests == "plus" and solutions and all(r.get("plus_status") is None for r in solutions):
+        raise ValueError(
+            f"{path}: no solution has a plus_status (written with --base-only?); "
+            "read it with --tests base"
+        )
     rows = []
     for task, results in data["eval"].items():
         for index, result in enumerate(results):

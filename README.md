@@ -116,7 +116,7 @@ compared within and across runs.
 | `inspect` | `log/_log.py`, `scorer/_metric.py`, `log/_recorders/eval.py` of inspect_ai; the Log Files docs page | sample id, `eval.model`, epoch - 1 | `error` error; time/working limit without a score timeout; unscored missing; `value_to_float` for values |
 | `openai-evals` | `evals/record.py` and `evals/base.py` of openai/evals | `sample_id`, completion functions, event order | `match.correct` 1/0 (or a `metrics` key); `error` event or no scoring event error |
 | `humaneval` | `human_eval/evaluation.py` and `execution.py` of openai/human-eval | `task_id`, file name, completion order | `passed` 1, `failed: ...` 0, `timed out` timeout |
-| `evalplus` | `evalplus/evaluate.py` and `eval/__init__.py` of evalplus | `task_id`, file name, solution order | base and plus pass 1 (`--tests base`: base only), any fail 0, timeout timeout, null error |
+| `evalplus` | `evalplus/evaluate.py` and `eval/__init__.py` of evalplus | `task_id`, file name, solution order | base and plus pass 1 (`--tests base`: base only), any fail 0, timeout timeout, other null error; a file with no `plus_status` (`--base-only`) needs `--tests base` |
 | `csv`, `jsonl` | this table, or any file through `--map` | mapped columns | `status` column, else ok with a score and error without |
 
 The benchmarks behind these formats are described in Jimenez et al., "SWE-bench: Can Language Models Resolve

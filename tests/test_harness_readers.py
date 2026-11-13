@@ -427,3 +427,19 @@ def test_swebench_old_results_unlisted_reference_ids_are_missing(tmp_path):
     without = {r.item_id: (r.status, r.score) for r in read(path)}
     with_items = {r.item_id: (r.status, r.score) for r in table if r.item_id != "p__q-9"}
     assert without == with_items
+
+
+def test_evalplus_base_only_file_needs_tests_base(tmp_path):
+    data = {
+        "date": "2026-01-01 00:00",
+        "hash": "abc",
+        "eval": {
+            "Mbpp/1": [evalplus_result("Mbpp/1", "pass", None)],
+            "Mbpp/2": [evalplus_result("Mbpp/2", "fail", None)],
+        },
+    }
+    path = write_json(tmp_path / "base_only_eval_results.json", data)
+    with pytest.raises(ValueError, match="--tests base"):
+        read(path)
+    base = read(path, options=ReadOptions(tests="base"))
+    assert [(r.status, r.score) for r in base] == [(Status.OK, 1.0), (Status.OK, 0.0)]
