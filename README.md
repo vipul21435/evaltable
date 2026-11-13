@@ -247,6 +247,7 @@ not comparable
   [lm-evaluation-harness](https://github.com/EleutherAI/lm-evaluation-harness),
   [Inspect AI](https://github.com/UKGovernmentBEIS/inspect_ai), [OpenAI Evals](https://github.com/openai/evals),
   [HumanEval](https://github.com/openai/human-eval) and [EvalPlus](https://github.com/evalplus/evalplus).
+- [rankstable](https://github.com/vipul21435/rankstable): how stable a leaderboard's order is to the averaging rule and the choice of benchmarks.
 
 ## References
 
