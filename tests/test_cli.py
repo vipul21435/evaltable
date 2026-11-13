@@ -95,3 +95,21 @@ def test_version(capsys):
         main(["--version"])
     assert exc.value.code == 0
     assert capsys.readouterr().out.startswith("evaltable ")
+
+
+def test_items_file_read_once(tmp_path, monkeypatch, capsys):
+    items = tmp_path / "items.txt"
+    items.write_text("item-01\nitem-02\nitem-99\n")
+    calls = []
+    original = Path.read_text
+
+    def counting(self, *args, **kwargs):
+        if self == items:
+            calls.append(self)
+        return original(self, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "read_text", counting)
+    assert main(["summary", B, "--items", str(items), "--json"]) == 0
+    data = json.loads(capsys.readouterr().out)
+    assert data["runs"][0]["n_reference"] == 3
+    assert len(calls) == 1

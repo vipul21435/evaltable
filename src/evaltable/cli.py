@@ -83,10 +83,14 @@ def _load(args: argparse.Namespace) -> EvalTable:
 
 
 def _reference(args: argparse.Namespace) -> list[str] | None:
-    if args.items is None:
-        return None
-    lines = Path(args.items).read_text(encoding="utf-8").splitlines()
-    return [line.strip() for line in lines if line.strip()]
+    # Read once: the file may be a pipe, which cannot be read a second time.
+    if not hasattr(args, "reference_items"):
+        if args.items is None:
+            args.reference_items = None
+        else:
+            lines = Path(args.items).read_text(encoding="utf-8").splitlines()
+            args.reference_items = [line.strip() for line in lines if line.strip()]
+    return args.reference_items
 
 
 def _cmd_read(args: argparse.Namespace) -> int:
