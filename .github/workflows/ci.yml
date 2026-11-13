@@ -19,4 +19,4 @@ jobs:
       - name: Lint
         run: uv run --extra dev ruff check .
       - name: Test
-        run: uv run --extra dev pytest -q --cov=evaltable --cov-report=term
+        run: uv run --extra dev --extra parquet pytest -q --cov=evaltable --cov-report=term

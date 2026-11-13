@@ -124,3 +124,15 @@ def test_unknown_format(tmp_path):
         read(tmp_path / "x.unknown")
     with pytest.raises(ValueError):
         read(tmp_path / "x.csv", fmt="nope")
+
+
+def test_parquet_round_trip(tmp_path):
+    pq = pytest.importorskip("pyarrow.parquet")
+    path = tmp_path / "long.parquet"
+    write_table(make_table(), path)
+    data = pq.read_table(path).to_pylist()
+    assert [d["item_id"] for d in data] == [r.item_id for r in make_table()]
+    assert data[2]["status"] == "error" and data[2]["score"] is None
+    assert data[1]["tokens"] == 12
+    with pytest.raises(ValueError):
+        write_table(make_table(), "-", "parquet")
