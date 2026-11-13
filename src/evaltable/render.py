@@ -91,7 +91,7 @@ def check_text(report: CheckReport) -> str:
                 lines.append(f"  {run} lacks: {_listing(absent)}")
         elif finding.check == "errors":
             for run, info in finding.details["runs"].items():
-                lines.append(f"  {run} errored: {_listing(info['errored'])}")
+                lines.append(f"  {run} errored or timed out: {_listing(info['errored'])}")
         elif finding.check == "duplicates":
             keys = [
                 f"{d['run_id']}/{d['item_id']}#{d['sample_index']}" for d in finding.details["rows"]
