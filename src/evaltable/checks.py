@@ -110,7 +110,7 @@ def check_errors(table: EvalTable, max_gap: float = 0.0) -> Finding:
         parts = []
         for run, info in runs.items():
             gap = "n/a" if info["gap"] is None else f"{info['gap']:+.4f}"
-            parts.append(f"{run}: {len(info['errored'])} errored, gap {gap}")
+            parts.append(f"{run}: {len(info['errored'])} errored or timed out, gap {gap}")
         message = "; ".join(parts)
     return Finding(
         "errors", passed=not failing, message=message, details={"runs": runs, "failing": failing}
