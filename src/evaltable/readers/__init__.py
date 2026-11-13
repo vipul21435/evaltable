@@ -105,8 +105,23 @@ def read(
     run_id: str | None = None,
     options: ReadOptions | None = None,
 ) -> EvalTable:
-    """Read one result file into a long table."""
-    options = options or ReadOptions()
+    """Read one result file into a long table.
+
+    Malformed input raises ``ValueError`` naming the file.
+    """
+    try:
+        return _read(path, fmt, column_map, run_id, options or ReadOptions())
+    except (KeyError, TypeError, AttributeError, IndexError) as exc:
+        raise ValueError(f"{path}: unexpected structure ({type(exc).__name__}: {exc})") from None
+
+
+def _read(
+    path: str | Path,
+    fmt: str,
+    column_map: Mapping[str, str] | None,
+    run_id: str | None,
+    options: ReadOptions,
+) -> EvalTable:
     if fmt == "auto":
         fmt = detect_format(path)
     if fmt == "csv":

@@ -10,7 +10,8 @@ import csv
 import gzip
 import json
 import math
-from collections.abc import Iterable, Mapping
+from collections.abc import Iterable, Iterator, Mapping
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
 
@@ -112,7 +113,12 @@ def rows_from_records(
         else:
             status = Status.parse(raw_status)
         raw_sample = record.get(cmap["sample"])
-        sample = 0 if _is_blank(raw_sample) else int(raw_sample)
+        try:
+            sample = 0 if _is_blank(raw_sample) else int(raw_sample)
+        except (TypeError, ValueError):
+            raise ValueError(
+                f"record {number}: sample index {raw_sample!r} is not an integer"
+            ) from None
         metadata = {
             key: value
             for key, value in record.items()
@@ -123,6 +129,17 @@ def rows_from_records(
         except ValueError as exc:
             raise ValueError(f"record {number}: {exc}") from None
     return rows
+
+
+@contextmanager
+def _naming(path: Path) -> Iterator[None]:
+    """Prefix the file name to a ValueError raised while reading it."""
+    try:
+        yield
+    except ValueError as exc:
+        if str(exc).startswith(str(path)):
+            raise
+        raise ValueError(f"{path}: {exc}") from None
 
 
 def read_csv(
@@ -137,9 +154,10 @@ def read_csv(
         delimiter = "\t" if path.suffix.lower() == ".tsv" else ","
     with path.open(newline="", encoding="utf-8") as handle:
         reader = csv.DictReader(handle, delimiter=delimiter)
-        rows = rows_from_records(
-            reader, column_map, run_id, default_run=path.stem, drop_blank_metadata=True
-        )
+        with _naming(path):
+            rows = rows_from_records(
+                reader, column_map, run_id, default_run=path.stem, drop_blank_metadata=True
+            )
     return EvalTable(rows)
 
 
@@ -167,5 +185,6 @@ def read_jsonl(
 ) -> EvalTable:
     """Read a JSONL file with one object per line."""
     path = Path(path)
-    rows = rows_from_records(iter_jsonl(path), column_map, run_id, default_run=path.stem)
+    with _naming(path):
+        rows = rows_from_records(iter_jsonl(path), column_map, run_id, default_run=path.stem)
     return EvalTable(rows)

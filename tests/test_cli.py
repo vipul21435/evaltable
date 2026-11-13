@@ -113,3 +113,36 @@ def test_items_file_read_once(tmp_path, monkeypatch, capsys):
     data = json.loads(capsys.readouterr().out)
     assert data["runs"][0]["n_reference"] == 3
     assert len(calls) == 1
+
+
+@pytest.mark.parametrize(
+    "name,content",
+    [
+        ("notzip.eval", b"this is not a zip archive"),
+        ("noheader.eval", None),
+        ("noid.json", b'{"eval": {"task": "t", "model": "m"}, "samples": [{"epoch": 1}]}'),
+        ("listindex.jsonl", b'{"item_id": "a", "score": 1, "sample_index": [1]}\n'),
+        (
+            "nullevent.jsonl",
+            b'{"spec": {"eval_name": "e", "completion_fns": ["m"]}}\n'
+            b'{"run_id": "r", "event_id": null, "sample_id": "s", "type": "match", '
+            b'"data": {"correct": true}}\n',
+        ),
+        (
+            "listscores.json",
+            b'{"eval": {"task": "t", "model": "m"}, "samples": [{"id": 1, "scores": [1]}]}',
+        ),
+    ],
+)
+def test_bad_input_exits_two(tmp_path, capsys, name, content):
+    import zipfile
+
+    path = tmp_path / name
+    if content is None:
+        with zipfile.ZipFile(path, "w") as archive:
+            archive.writestr("_journal/start.json", "{}")
+    else:
+        path.write_bytes(content)
+    assert main(["check", str(path)]) == 2
+    err = capsys.readouterr().err
+    assert err.startswith("evaltable: error:") and name in err

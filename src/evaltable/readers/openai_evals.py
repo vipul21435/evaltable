@@ -55,6 +55,10 @@ def read_openai_evals(
     errors: dict[str, str] = {}
     order: dict[str, None] = {}
     metric_keys: set[str] = set()
+    for event in events:
+        event_id = event.get("event_id", 0)
+        if isinstance(event_id, bool) or not isinstance(event_id, int):
+            raise ValueError(f"{path}: an event has event_id {event_id!r}, not an integer")
     for event in sorted(events, key=lambda e: e.get("event_id", 0)):
         sid = event.get("sample_id")
         if sid is None:

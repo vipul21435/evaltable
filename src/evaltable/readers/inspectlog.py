@@ -80,8 +80,16 @@ def _load(path: Path) -> tuple[dict[str, Any], list[dict[str, Any]]]:
             raise ValueError(
                 f"{path}: {exc}; convert it with 'inspect log convert --to json' first"
             ) from None
+        except zipfile.BadZipFile:
+            raise ValueError(f"{path}: not a zip archive, so not an Inspect .eval log") from None
+        except KeyError:
+            raise ValueError(
+                f"{path}: no header.json in the archive (an evaluation still in progress?)"
+            ) from None
         return header, samples
     data = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(data, dict):
+        raise ValueError(f"{path}: not an Inspect evaluation log")
     return data, list(data.get("samples") or [])
 
 
@@ -104,6 +112,8 @@ def read_inspect(
     seen: set[str] = set()
     scorers_found: set[str] = set()
     for sample in samples:
+        if not isinstance(sample, dict) or sample.get("id") is None:
+            raise ValueError(f"{path}: a sample has no id")
         item = str(sample["id"])
         seen.add(item)
         epoch = int(sample.get("epoch") or 1)
