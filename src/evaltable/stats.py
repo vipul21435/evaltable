@@ -25,4 +25,8 @@ def wilson_interval(
     z2n = z * z / n
     centre = (p + z2n / 2.0) / (1.0 + z2n)
     half = z / (1.0 + z2n) * math.sqrt(p * (1.0 - p) / n + z * z / (4.0 * n * n))
-    return (max(0.0, centre - half), min(1.0, centre + half))
+    # At 0 and at n successes one end is exactly 0 or 1; set it so that rounding in
+    # centre - half (which differs between platforms) cannot leave 2.8e-17 there.
+    lo = 0.0 if successes == 0 else max(0.0, centre - half)
+    hi = 1.0 if successes == n else min(1.0, centre + half)
+    return (lo, hi)
