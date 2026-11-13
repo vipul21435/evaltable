@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import math
 from collections.abc import Iterable, Iterator
 from dataclasses import dataclass, field
@@ -87,9 +88,11 @@ class Row:
     def key(self) -> tuple[str, str, int]:
         return (self.run_id, self.item_id, self.sample_index)
 
-    def sort_key(self) -> tuple[str, str, int, str, float]:
+    def sort_key(self) -> tuple[str, str, int, str, float, str]:
         score = -math.inf if self.score is None else self.score
-        return (self.run_id, self.item_id, self.sample_index, self.status.value, score)
+        # Metadata breaks ties, so the canonical order does not depend on input order.
+        meta = json.dumps(self.metadata, sort_keys=True, default=str)
+        return (self.run_id, self.item_id, self.sample_index, self.status.value, score, meta)
 
 
 class EvalTable:
